@@ -1,0 +1,128 @@
+#####################################
+ASFBot - Multipurpose secretarial bot
+#####################################
+
+
+========================
+Installation and running
+========================
+1) Download the bot from https://svn.apache.org/repos/infra/infrastructure/trunk/projects/svnbot/
+2) Install Lua 5.1/5.2 (whichever you can get your hands on, but NOT 5.0)
+3) Install LuaSec and LuaSocket
+4) Set up default channels and options in asfbot.cfg (use your favorite text editor)
+5) Copy the `asfbot` file to /usr/local/etc/rc.d/ or where applicable and edit it so that the paths match
+6) run: nohup lua-5.1 asfbot.lua & (This should be done from ASFBot's folder, eg /usr/local/etc/svnbot)
+
+=====
+Karma
+=====
+Karma is used to access the features that are not meant for everyone.
+Infrastructure people will usually have a karma level of 10, which grants access to all features.
+To give a specific person karma on IRC, use the following command:
+`ASFBot: karma add [nick] [level]`, for example: `ASFBot: karma add Humbedooh 3`.
+This karma will be tied to the ident of the user, so please try to constrain this to registered users 
+with a working cloak. To make the karma stick, add an entry in asfbot.cfg in the [Karma] section, as such:
+
+  johndoe    apache/committer/johndoe 3
+  
+The following karma levels are in effect (more to be added):
+
+[Action]                            [Required karma]
+Restart/stop ASFBot                     10
+Reload configuration                    10
+Set an option                           10
+Grant/remove karma                      10
+Display PubSub status                    8
+Reconnect to a PubSub service            8
+Send an alert/speak as ASFBot (wall)     8
+Join/leave a channel                     8
+Subscribe/unsubscribe to repos           6
+List channel subscriptions               3
+Use the meeting recording feature        3
+Send emails with meeting summaries       3
+Add comments to JIRA tickets             3
+Reply to a comment on comments.a.o       2
+Use the 'help' feature                   0
+Use the 'tell' feature                   0
+Use the issue info feature               0
+Use the beer tab                         0
+
+====================
+Setting up reporting
+====================
+Reporting should initially be set up via the IRC interface, by asking ASFBot to join the appropriate channel.
+The following commands are usually used via #asftest:
+
+1) `ASFSvnBot: join #channel-name`
+   (Join the channel yourself and execute step 2 in there)
+2) `ASFSvnBot: subscribe projectname`
+
+Once that is done, add an entry to the `channels` list in asfbot.cfg and commit the changes:
+
+[channel:#channel-name]
+  tags: project-subversion-name othertag thirdtag
+
+You can use `ASFBot: reconfigure` to reload asfbot.cfg with your changes (don't forget to svn up first!)
+
+For incubator projects, use the special tag `incubator.projectname` which will match against both 
+`incubator/projectname` (Subversion) and `incubator-projectname` (Git repository).
+
+==============
+JIRA Reporting
+==============
+JIRA reporting works by emails sent to asfbot@urd.zones.apache.org being run through dumpsubject.lua, 
+which - in the case of a JIRA update - passes this information onto the resident pubsub service on port
+2069 (this is an inactive gitpubsub daemon that just passes on information)
+
+To subscribe a channel to JIRA reporting, follow these steps:
+
+1) Subscribe asfbot@urd.zones.apache.org to the mailing list that reports JIRA updates
+2) In the appropriate channel, write: `ASFBot: subscribe JIRA:[jira-name]` (fx JIRA:INFRA) OR
+3) Add the JIRA:[jira-name] tag to asfbot.cfg and run `ASFBot: reconfigure`.
+
+
+========
+Factoids
+========
+Factoids can be served in any channel, if the 'factoids' directive is set in the channel's configuration.
+For factoids to persist, an admin must first touch 'factoids_#(channel).txt' in ASFBot's root directory,
+and chown it to the user ASFBot runs as (typically asfbot).
+
+============
+IRC Meetings
+============
+To set up a channel for meeting recording, add the following to the channel's configuration:
+ allowLogging: true
+
+If the email feature is to be used, each person chairing a meeting should be set up with karma 
+level 3 in the main [karma] configuration, fx:
+
+  johndoe apache/committer/johndoe 3
+
+============
+IRC Commands
+============
+IRC Commands can be used by IRC users with karma (see asfbot.cfg for the default list of users)
+
+alert [message]                     : Sends a message to all IRC channels ASFBot is in
+help                                : Lists the available commands
+
+join [channel name]                 : Joins a channel
+leave                               : Leaves the channel from which the command was issued
+
+subscribe [pattern]                 : Subscribes the current channel to directories matching [pattern] (using Lua Patterns)
+unsubscribe [pattern]               : Unsubscribes the current channel from directories matching [pattern] (using Lua Patterns)
+subs                                : Lists the currently subscribed directories for the current channel
+
+karma [add|remove|list] [user]      : Adds/removes/list karma (add people to config.lua for permanent karma)
+
+option [value] [key]                : Sets an option specific to the channel. Use `help option` for more information
+reload                              : Reloads the configuration and any plugins available in the scripts folder
+reconnect [server]                  : drops an svnpubsub connection and reconnects (use server name only, not port or URL, fx. "svn-master.apache.org")
+reply [comment id] [message]        : Replies to a comment through comments.apache.org
+comment [jira ticket id] [message]  : Replies to a comment through JIRA
+restart                             : Restarts the IRC service. This is mainly used for reloading the core features
+status                              : Displays the current svnpubsub connection status
+tell [recipient] [message]          : Notifies [recipient] of a message when he/she joins the channel or starts to talk.
+meeting [start|end]                 : Start/stop recording a meeting in a channel.
+factoids                            : Lists the currently known factoids for a channel, if factoids are enabled.

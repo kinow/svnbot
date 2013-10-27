@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# PROVIDE: asfbot
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+#
+# Please add the following to your rc.conf:
+# asfbot_enable="YES"
+# asfbot_user="<run asfbot as this user>"
+# asfbot_chdir="<run asfbot in this directory>"
+
+. /etc/rc.subr
+
+name=asfbot
+rcvar=asfbot_enable
+start_cmd="${name}_start"
+stop_cmd="${name}_stop"
+
+asfbot_start()
+{
+	echo "Starting ASFBot"
+	cd ${asfbot_chdir}
+	su -m ${asfbot_user} -c "nohup lua-5.1 svnbot.lua > /dev/null &"
+}
+
+asfbot_stop()
+{
+	echo "Stopping ASFBot"
+	pkill -f svnbot.lua
+}
+
+load_rc_config $name
+run_rc_command "$1"
+
